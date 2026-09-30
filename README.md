@@ -1,5 +1,7 @@
 # Pair.nvim
 
+`I know this is written with AI but I just whipped this up to use because I needed something simple like this. I would love your contributions and ideas.`
+
 Pair is an early Neovim coding companion for working with an agent while staying hands-on in the buffer. Discuss the codebase in a chat split, ask about a selection, request a replacement for selected code, or put the cursor between functions and ask for an insertion. Pair puts proposed code directly into your unsaved buffer so you can inspect it where it belongs, then accept or reject it.
 
 This repository is a **public-preview candidate**. Codex, Antigravity CLI, one OpenCode account/model route, and Copilot CLI have passed live workflow checks. The Claude Code and legacy Gemini CLI presets still need authenticated live validation. Direct OpenAI, Anthropic, and Gemini API backends have passed mock protocol and loopback HTTP checks, but no authenticated provider requests yet. See the [backend support table](#backend-support) before selecting a route. The product direction is in [VISION.md](VISION.md), the intended editor experience is in [UX.md](UX.md), and the launch requirements are in [ROADMAP.md](ROADMAP.md).
