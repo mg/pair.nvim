@@ -33,15 +33,25 @@ pair.setup({
 local function prompts()
   if vim.fn.filereadable(trace) == 0 then return {} end
   local result = {}
-  for _, line in ipairs(vim.fn.readfile(trace)) do
-    result[#result + 1] = vim.json.decode(line)
+  local lines = vim.fn.readfile(trace)
+  for index, line in ipairs(lines) do
+    local ok, decoded = pcall(vim.json.decode, line)
+    if not ok then
+      if index == #lines then break end -- The mock may still be appending this line.
+      error("Invalid completed mock prompt trace line " .. index)
+    end
+    result[#result + 1] = decoded
   end
   return result
 end
 
 local function wait_for(count)
-  assert(vim.wait(4000, function() return #prompts() >= count end), "expected " .. count .. " prompts")
-  return prompts()
+  local observed
+  assert(vim.wait(4000, function()
+    observed = prompts()
+    return #observed >= count
+  end), "expected " .. count .. " prompts")
+  return observed
 end
 
 local function attachment(prompt)
