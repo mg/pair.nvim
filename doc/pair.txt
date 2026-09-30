@@ -20,12 +20,12 @@ Pair requires Neovim 0.11 or newer. The default backend needs the `codex`
 CLI on PATH and a working CLI login. With lazy.nvim: >lua
 
   {
-    dir = "/path/to/pair.nvim",
+    "sampsn/pair.nvim",
     config = function() require("pair").setup() end,
   }
 <
-Replace the path with your checkout. Pair defaults to the Codex app-server
-transport.
+For a local checkout, use `dir = "/path/to/pair.nvim"` instead. Pair defaults
+to the Codex app-server transport.
 Optional setup fields include: >lua
 
   require("pair").setup({
@@ -120,6 +120,11 @@ arbitrary commands or write project files. `:PairModel {id}` accepts an
 explicit provider model ID for these backends. Provider API billing is
 separate from CLI and chat subscriptions. See README.md for current test
 coverage and credential handling.
+
+Direct API history has a local 2 MiB / 400-message limit. Pair warns before
+it fills and suggests `:PairNew`, which preserves the earlier transcript.
+A provider may report its own context limit sooner; start a new conversation
+when Pair shows that recovery action. CLI agents manage their own context.
 
 6. COMMANDS AND MAPPINGS                                       *pair-commands*
 

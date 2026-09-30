@@ -6,7 +6,7 @@ This repository is a **public-preview candidate**. Codex, Antigravity CLI, one O
 
 ## Start in a few minutes
 
-Install with lazy.nvim after the GitHub repository is published:
+Install with lazy.nvim:
 
 ```lua
 {
