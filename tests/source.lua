@@ -1,0 +1,46 @@
+vim.opt.rtp:append(vim.fn.getcwd())
+
+local api = vim.api
+local ui = require("pair.ui")
+local first_buf = api.nvim_get_current_buf()
+local first_win = api.nvim_get_current_win()
+assert(api.nvim_buf_get_name(first_buf) == "", "the initial source should be unnamed")
+assert(ui.source_buffer() == first_buf, "an unnamed source buffer should be eligible")
+
+ui.chat()
+local input_win = api.nvim_get_current_win()
+local source, win = ui.source_buffer()
+assert(source == first_buf and win == first_win, "chat should remember its opening source")
+
+api.nvim_set_current_win(first_win)
+local second_buf = api.nvim_create_buf(true, false)
+api.nvim_buf_set_name(second_buf, vim.fn.tempname() .. ".lua")
+api.nvim_win_set_buf(first_win, second_buf)
+api.nvim_set_current_win(input_win)
+assert(ui.source_buffer() == second_buf, "changing the buffer in a source window should update chat context")
+
+api.nvim_set_current_win(first_win)
+vim.cmd("vsplit")
+local second_win = api.nvim_get_current_win()
+local third_buf = api.nvim_create_buf(true, false)
+api.nvim_buf_set_name(third_buf, vim.fn.tempname() .. ".lua")
+api.nvim_win_set_buf(second_win, third_buf)
+api.nvim_set_current_win(input_win)
+assert(ui.source_buffer() == third_buf, "the last focused source window should win")
+
+api.nvim_win_close(second_win, true)
+assert(ui.source_buffer() == second_buf, "closing that source window should fall back to the previous one")
+
+local special = api.nvim_create_buf(false, true)
+api.nvim_set_option_value("buftype", "nofile", { buf = special })
+api.nvim_set_current_win(first_win)
+api.nvim_win_set_buf(first_win, special)
+api.nvim_set_current_win(input_win)
+assert(ui.source_buffer() == nil, "a Pair pane or non-source buffer must not become chat context")
+
+api.nvim_win_set_buf(first_win, first_buf)
+api.nvim_set_current_win(first_win)
+api.nvim_set_current_win(input_win)
+assert(ui.source_buffer() == first_buf, "source tracking should recover when a source returns")
+ui.close()
+print("Pair source tracking tests passed")

@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / Neovim ${{ matrix.nvim }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        nvim: [v0.11.7, stable]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: ${{ matrix.nvim }}
+      - name: Show tool versions
+        run: |
+          nvim --version | head -1
+          python3 --version
+      - name: Run local protocol and editor checks
+        run: bash tests/run_all.sh
+      - name: Check clean manual and lazy.nvim installs
+        run: bash tests/install_smoke.sh

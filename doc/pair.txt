@@ -1,0 +1,173 @@
+*pair* *pair.nvim*                                      Pair for Neovim
+
+Pair keeps a persistent agent conversation beside your code. The agent may
+research and propose a scoped change; Neovim places that proposal in your
+unsaved buffer for review. Pair does not grant the agent a file-write tool.
+
+CONTENTS                                                     *pair-contents*
+
+  1. Setup                                                   |pair-setup|
+  2. First steps                                             |pair-quickstart|
+  3. Chat and context                                        |pair-context|
+  4. Proposals                                               |pair-proposals|
+  5. Sessions and backends                                   |pair-sessions|
+  6. Commands and mappings                                   |pair-commands|
+  7. Troubleshooting                                         |pair-troubleshooting|
+
+1. SETUP                                                      *pair-setup*
+
+Pair requires Neovim 0.11 or newer. The default backend needs the `codex`
+CLI on PATH and a working CLI login. With lazy.nvim: >lua
+
+  {
+    dir = "/path/to/pair.nvim",
+    config = function() require("pair").setup() end,
+  }
+<
+Replace the path with your checkout. Pair defaults to the Codex app-server
+transport.
+Optional setup fields include: >lua
+
+  require("pair").setup({
+    backend = "codex",
+    command = "codex",
+    transport = "app-server", -- or "exec" for the older Codex path
+    keymaps = true,
+    context_max_bytes = 128 * 1024,
+    context_nearby_lines = 20,
+    models = {},               -- e.g. { opencode = "provider/model" }
+  })
+<
+Presets are `codex`, `claude`, `copilot`, `antigravity`, `gemini`, and `opencode`.
+`antigravity` needs an installed, signed-in `agy` CLI. ACP presets need their
+own installed, authenticated CLI or adapter. For a custom ACP agent,
+`agents[name]` needs `kind = "acp"`, a
+command and args list, and `restricted = true` after you configure that
+agent's own read-only tool policy. See |pair-troubleshooting|.
+
+2. FIRST STEPS                                                *pair-quickstart*
+
+Set Neovim's working directory to the project root. Run `:PairChat` or press
+`<leader>pc` to toggle the side chat, or `:PairActions` to choose an action.
+Closing the chat keeps an unsent draft. In the chat input,
+Insert-mode Enter makes a new line; Normal-mode Enter sends the message.
+Visual-select code and run `:PairAsk` or `:PairChange`. Place the cursor at
+an insertion point and run `:PairHere`. Buffer requests use a small prompt
+window; Enter submits and Normal-mode q cancels it.
+
+`<leader>pp` opens the action picker in Normal or Visual mode. Visual mode
+keeps the exact selection. `gP` opens it from a Pair chat pane. Actions
+that need editor scope explain what is missing when invoked from chat.
+
+3. CHAT AND CONTEXT                                            *pair-context*
+
+The chat and editor requests use one agent session for the current workspace
+and backend. Pair attaches the current in-memory source buffer by default,
+including unsaved edits. For chat, it uses the last focused source buffer.
+Each request captures a snapshot when submitted; queued requests keep their
+own snapshot. A selected scope is attached with Ask and Change; Insert uses
+the cursor position.
+
+The default full-buffer limit is 128 KiB. When it is exceeded, Pair offers
+a narrower attachment or cancellation. In either input, Normal-mode `gC`
+previews the attachment and `gA` detaches or reattaches the full buffer for
+that request. The selected scope stays attached. Change the limit with
+`context_max_bytes` in |pair-setup|.
+
+Agent research activity appears as compact chat rows. Focus a tool row and
+press Enter or `za` to expand its details. `:PairCancel` stops the active
+request and clears the queue. Some agents report fewer tool details than
+others.
+
+4. PROPOSALS                                                  *pair-proposals*
+
+Ask streams a wrapped answer beside the selection and into chat. Dismiss
+the inline answer with `:PairDismiss` or `<leader>pd`.
+
+Change and Insert place a completed proposal directly into the unsaved
+buffer, with Accept, Reject, and Diff controls beside it. From the line
+above a proposal, press `j` to focus its controls. Use `h` or `l` to choose
+Accept or Reject, then Enter. Press `d` on the controls or run `:PairDiff`
+for a full diff. `:PairAccept` keeps the buffer change; `:PairReject`
+restores the original scope. Saving accepts the visible buffer contents.
+If you edit the proposed region afterward, Reject will not overwrite your
+later edits. Pair never asks the agent to write project files directly.
+
+5. SESSIONS AND BACKENDS                                       *pair-sessions*
+
+Pair stores separate conversations per working directory and backend under
+`stdpath('state')/pair`. `:PairNew` starts an empty conversation while
+preserving older records. `:PairSessions` picks an older conversation and
+verifies its saved agent session before showing that transcript. A missing
+session pointer for a transcript with messages cannot be resumed safely.
+
+`:PairBackends` lists backends and starts the selected one before switching
+the visible chat. A startup or restoration failure leaves the current
+conversation in place. `:PairBackend {name}` switches directly and connects
+on the next message. Context is never shared between backends. `:PairModel`
+shows models reported by the active agent; `:PairModel {id}` selects one.
+The choice is saved for that conversation. A listed model may still be
+unavailable to your account when a request starts. The Codex `exec`
+transport cannot verify restoration or offer a model picker.
+
+Direct API backends are `openai_api`, `anthropic_api`, and `gemini_api`.
+They need `curl` and `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or
+`GEMINI_API_KEY`, respectively. Select one with `:PairBackend {name}` or
+`require("pair").setup({ backend = "openai_api" })`. A key lookup callback
+can be supplied through `setup({ api_keys = { openai = function() ... end } })`.
+Direct APIs use only Pair's bounded read and search tools; they cannot run
+arbitrary commands or write project files. `:PairModel {id}` accepts an
+explicit provider model ID for these backends. Provider API billing is
+separate from CLI and chat subscriptions. See README.md for current test
+coverage and credential handling.
+
+6. COMMANDS AND MAPPINGS                                       *pair-commands*
+
+  Command                  Default mapping       Use
+  :PairActions             <leader>pp, chat gP   Main action picker
+  :PairChat                <leader>pc            Toggle chat
+  :PairSend                <leader>ps            Focus chat input
+  :PairAsk                 Visual <leader>pa     Ask about selection
+  :PairChange              Visual <leader>pe     Propose replacement
+  :PairHere                <leader>pi            Propose insertion
+  :PairAccept              <leader>py            Keep proposal
+  :PairReject              <leader>pn            Reject proposal
+  :PairDiff                <leader>pv            Full proposal diff
+  :PairDismiss             <leader>pd            Hide inline answer
+  :PairCancel              -                     Cancel active work
+  :PairNew                 <leader>pr, chat gN   New chat
+  :PairSessions            <leader>pS, chat gS   Resume chat
+  :PairBackends            <leader>pB, chat gB   Switch backend
+  :PairBackend [name]      -                     Show or set backend
+  :PairModel [id]          <leader>pM, chat gM   Pick or set model
+
+`PairAsk` and `PairChange` also accept a numeric Ex line range, such as
+`:20,24PairAsk explain this`. `PairActions` accepts a Visual or numeric
+range. `PairHere` and the scoped commands accept prompt text as arguments.
+Set `keymaps = false` in |pair-setup| to define your own mappings.
+
+7. TROUBLESHOOTING                                            *pair-troubleshooting*
+
+Run `:checkhealth pair` to inspect the selected backend executable, Pair
+setup, state directory, and active session metadata. It does not start an
+agent, run a prompt, inspect credentials, or print transcript contents.
+
+If the executable is missing, install that CLI or set its command in
+`setup()`. If startup reports a login or account error, sign in through the
+agent's own CLI and retry a message. If a model is rejected, use
+`:PairModel` to choose an offered model, then check that the account has
+access to it. If a saved transcript has no agent session pointer, start a
+new conversation with `:PairNew`; the old transcript stays on disk.
+
+Pair uses read-only Codex sandbox settings, disables configured Codex MCP
+servers and other external tools, and rejects ACP permission requests.
+Custom ACP agent restrictions are supplied by the user and must be checked
+in that agent. Pair does not run tests, builds, formatters, or other
+commands that might write project files on the agent's behalf.
+
+Pair saves transcript text locally with recognizable tokens redacted, but
+arbitrary secrets cannot be detected reliably. Avoid putting credentials
+in chat. Agent login state is managed by its CLI; Pair does not store login
+credentials in its session records.
+
+vim:tw=78:ts=8:ft=help:norl:

@@ -1,0 +1,11 @@
+{
+  "hooksConfig": { "enabled": false },
+  "skills": { "enabled": false },
+  "security": { "disableYoloMode": true },
+  "admin": {
+    "secureModeEnabled": true,
+    "extensions": { "enabled": false },
+    "mcp": { "enabled": false },
+    "skills": { "enabled": false }
+  }
+}

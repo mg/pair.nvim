@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest a focused Pair workflow improvement
+title: "feature: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What task is hard today?
+      description: Describe the editor action and desired result in concrete terms.
+    validations:
+      required: true
+  - type: textarea
+    id: approach
+    attributes:
+      label: Suggested interaction
+      description: Include commands, keys, or screen behavior if helpful.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Current workaround

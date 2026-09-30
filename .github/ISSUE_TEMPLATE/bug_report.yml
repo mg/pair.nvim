@@ -1,0 +1,41 @@
+name: Bug report
+description: Report a Pair setup, editor, or backend problem
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "Please remove credentials, private code, and sensitive transcript text before posting. Use SECURITY.md for vulnerabilities."
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include commands, mappings, selection type, and whether the buffer was modified or saved.
+      placeholder: "1. Open a disposable project…\n2. Run :PairChat…"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: input
+    id: neovim
+    attributes:
+      label: Neovim version and operating system
+      placeholder: "NVIM v0.11.7, macOS 15"
+    validations:
+      required: true
+  - type: input
+    id: backend
+    attributes:
+      label: Backend, CLI or adapter version, model, and login route
+      placeholder: "Codex CLI 0.159.2, ChatGPT login"
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Relevant diagnostics
+      description: Include redacted :checkhealth pair output and the smallest safe error excerpt.

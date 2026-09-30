@@ -1,0 +1,12 @@
+# Pair's Gemini ACP tool boundary. The higher-priority read rule overrides
+# this deny-all rule for the four local inspection tools only.
+[[rule]]
+toolName = "*"
+decision = "deny"
+priority = 900
+denyMessage = "Pair only permits local file inspection tools."
+
+[[rule]]
+toolName = ["read_file", "list_directory", "glob", "grep_search"]
+decision = "allow"
+priority = 950

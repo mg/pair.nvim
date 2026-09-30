@@ -1,0 +1,10 @@
+pair	pair.txt	/*pair*
+pair-commands	pair.txt	/*pair-commands*
+pair-contents	pair.txt	/*pair-contents*
+pair-context	pair.txt	/*pair-context*
+pair-proposals	pair.txt	/*pair-proposals*
+pair-quickstart	pair.txt	/*pair-quickstart*
+pair-sessions	pair.txt	/*pair-sessions*
+pair-setup	pair.txt	/*pair-setup*
+pair-troubleshooting	pair.txt	/*pair-troubleshooting*
+pair.nvim	pair.txt	/*pair.nvim*
