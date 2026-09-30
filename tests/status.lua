@@ -13,11 +13,17 @@ local source_win = api.nvim_get_current_win()
 local pair = require("pair")
 pair.setup({
   backend = "mock", keymaps = false,
-  agents = { mock = {
-    kind = "acp", command = "python3", args = { plugin_root .. "/tests/mock_acp.py" },
-    env = { PAIR_MOCK_TRACE = trace, PAIR_MOCK_START_DELAY = "0.4" },
-    required_mode = "plan", restricted = true,
-  } },
+  agents = {
+    mock = {
+      kind = "acp", command = "python3", args = { plugin_root .. "/tests/mock_acp.py" },
+      env = { PAIR_MOCK_TRACE = trace, PAIR_MOCK_START_DELAY = "0.4" },
+      required_mode = "plan", restricted = true,
+    },
+    other = {
+      kind = "acp", command = "python3", args = { plugin_root .. "/tests/mock_acp.py" },
+      env = { PAIR_MOCK_TRACE = trace }, required_mode = "plan", restricted = true,
+    },
+  },
 })
 
 local function header()
@@ -96,14 +102,14 @@ assert(vim.wait(3000, function() return header():find("Ready", 1, true) ~= nil e
 vim.wait(500)
 assert(trace_count("session/prompt") == 1, "startup cancellation should not send a late prompt")
 
-pair.backend("codex")
+pair.backend("other")
 title = header()
-assert(title:find("codex", 1, true) and title:find("Ready", 1, true)
+assert(title:find("other", 1, true) and title:find("Ready", 1, true)
   and not title:find("mock/default", 1, true), "switching backends should update header status")
 
 pair.new_session()
 local state_base = vim.fn.stdpath("state") .. "/pair/" .. vim.fn.sha256(root)
-for _, suffix in ipairs({ ".mock", "" }) do
+for _, suffix in ipairs({ ".mock", ".other" }) do
   vim.fn.delete(state_base .. suffix .. ".records", "rf")
   vim.fn.delete(state_base .. suffix .. ".sessions.json")
 end
