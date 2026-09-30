@@ -77,7 +77,7 @@ These milestones are ordered. Each numbered slice should be small enough for one
 - [x] **6.1 Install and CI.** Clean `lazy.nvim` and native package installs pass from a fresh GitHub clone. CI passes the non-live suite and install smoke checks on macOS and Linux with Neovim 0.11.7 and stable.
 - [x] **6.2 Docs and support.** The README has a first-run path and support table; help, contribution, issue, security, and local-state guidance are in place. Recheck the table after remaining live gates.
 - [ ] **6.3 Outside-user trial.** Have several Neovim users complete the headline flow without guidance. Fix blockers around context, scope, review, setup, and cancellation before tagging.
-- [ ] **6.4 Publish.** Prepare a short terminal demo, confirm the GitHub repository/name and MIT license, publish a `v0.1.0` preview with known limits, then share it.
+- [ ] **6.4 Publish.** The MIT-licensed repository is public at `sampsn/pair.nvim` as an untagged preview candidate. A short terminal demo, outside-user trial, and `v0.1.0` prerelease remain.
 
 **Gate:** Docs, demo, release tag, and support matrix describe the same tested build.
 

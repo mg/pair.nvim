@@ -73,7 +73,7 @@ The current chat, prompt, Ask, and proposal UI is the alpha baseline. Add the fo
 
 ## 5. Prepare and publish the preview
 
-- [ ] Choose the public GitHub owner and confirm the name `pair.nvim` is available there. Create the remote when the repository contents and first README are ready for review.
+- [x] Publish the repository as `sampsn/pair.nvim` with the MIT license and a first-run README. It is an untagged preview candidate while outside-user testing continues.
 - [ ] Record a short terminal demo of the headline workflow, using a small sample file and showing the prompt window, preview, and accept/reject decision.
 - [ ] Ask a few Neovim users to install from GitHub without verbal guidance. Fix the problems that prevent the core loop; capture other feedback as issues.
 - [ ] Review the README and security wording against the tested behavior. Remove local absolute paths and temporary setup instructions from public-facing examples.

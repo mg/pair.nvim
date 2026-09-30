@@ -57,6 +57,8 @@ Or add this directory to `runtimepath` and call `require("pair").setup()` from y
 
 “Preview candidate” means the listed route passed on this machine; see [TRANSPORT.md](TRANSPORT.md) for versions, dates, and exact checks. Other login, subscription, BYOK, and model combinations have not been verified. Pair offers the experimental backends in the picker so their users can help validate them; the table does not imply a live pass.
 
+If you can test an experimental account route, follow the [backend validation checklist](docs/backend-validation.md) and report the result without sharing credentials. New Neovim users can follow the [outside-user trial](docs/preview-trial.md).
+
 ## Agent backends
 
 Run `:PairBackends` to choose a backend, or use `:PairBackend codex`, `claude`, `copilot`, `gemini`, `antigravity`, `opencode`, `openai_api`, `anthropic_api`, or `gemini_api` directly. The picker starts the selected backend and resumes its session before changing the visible conversation; startup errors leave the current chat in place. The direct command connects on the next message. Pair keeps a separate session and transcript for each backend. Use `:PairModel` to pick a listed model, or `:PairModel model-id` to select an explicit ID. Direct APIs offer a short preset list and accept any valid model ID explicitly; the provider still determines access. The model choice is saved with that conversation. Antigravity does not report a model catalog to Pair; set `models.antigravity` in `setup()` before starting a conversation if needed. The older Codex `exec` transport does not provide a model picker.
