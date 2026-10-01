@@ -6,6 +6,8 @@ Chat about your project, ask about selected code, or request a change exactly wh
 
 ![Pair.nvim in Zig: chat, ask about selected code, insert a helper, then wire up its caller by hand.](assets/pair-workflow.gif)
 
+[Watch the demo (MP4)](assets/pair-workflow.mp4)
+
 I built this with AI because I wanted a simple tool for this workflow. Contributions and ideas are welcome.
 
 Pair is an early preview. Some backends still need live testing.
