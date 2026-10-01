@@ -25,3 +25,7 @@ setup are preserved. Responses and timings can vary between recordings.
 Outputs: `assets/pair-workflow.gif` and an MP4 version. Screenshots and a
 saved-code verification report are written under `/tmp/pair-demo-*` and
 `/tmp/pair-zig-demo-result.*` for review.
+
+The current README MP4 removes three seconds of Insert waiting (33–36s)
+and the last four seconds from the recording. A new VHS run produces the
+untrimmed capture; review its timings before trimming again.
