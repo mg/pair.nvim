@@ -9,7 +9,8 @@ vhs demo/workflow.tape
 ```
 
 Requires Neovim 0.11+, Python 3, the recorded font (FiraCode Nerd Font Mono),
-and an authenticated `codex` CLI. Recording uses your account's quota.
+and an authenticated `codex` CLI with access to `gpt-6-luna`.
+The recording uses GPT-6 Luna and your account's quota, with an 18-point font.
 VHS downloads a headless browser if one is not already available.
 
 The tape records real chat, Ask, and Insert interactions in one live session:

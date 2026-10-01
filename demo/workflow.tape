@@ -9,7 +9,7 @@ Require python3
 
 Set Shell "bash"
 Set FontFamily "FiraCode Nerd Font Mono"
-Set FontSize 20
+Set FontSize 18
 Set Width 1440
 Set Height 900
 Set Padding 16

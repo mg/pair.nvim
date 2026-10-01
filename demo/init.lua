@@ -63,4 +63,8 @@ vim.opt.statusline = "%#DemoMode#  %{mode() =~# 'i' ? 'INSERT' : 'NORMAL'}  "
   .. "%#StatusLine#  checkout%=%#DemoHint# CHAT  →  ASK  →  INSERT  "
 vim.opt_local.winbar = "  checkout / src / cart.zig"
 
-require("pair").setup({ backend = "codex", remember_selection = false })
+require("pair").setup({
+  backend = "codex",
+  models = { codex = "gpt-6-luna" },
+  remember_selection = false,
+})
