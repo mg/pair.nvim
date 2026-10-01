@@ -9,7 +9,7 @@ Require python3
 
 Set Shell "bash"
 Set FontFamily "FiraCode Nerd Font Mono"
-Set FontSize 18
+Set FontSize 14
 Set Width 1440
 Set Height 900
 Set Padding 16
@@ -20,7 +20,7 @@ Set WindowBar Colorful
 Set WindowBarSize 30
 Set Theme "TokyoNight"
 Set Framerate 12
-Set TypingSpeed 30ms
+Set TypingSpeed 55ms
 Set CursorBlink false
 
 Env PS1 "$ "
@@ -59,7 +59,10 @@ Sleep 400ms
 Type "Why are there fractional cents? One short sentence."
 Sleep 500ms
 Enter
-Sleep 300ms
+# At this font size the inline spinner fits beside the selected function.
+Wait+Screen@30s /Pair .*thinking/
+Screenshot "/tmp/pair-demo-thinking.png"
+Sleep 800ms
 Wait+Screen@90s /Ready/
 Sleep 3s
 Screenshot "/tmp/pair-demo-ask.png"
@@ -94,7 +97,7 @@ Type "/return amount"
 Enter
 Sleep 400ms
 Type "cc"
-Type@55ms "return roundCents(amount * (1 - discount));"
+Type@80ms "return roundCents(amount * (1 - discount));"
 Escape
 Sleep 700ms
 Type ":noh"
