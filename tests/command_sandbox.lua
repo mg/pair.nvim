@@ -39,6 +39,17 @@ for file in [root / 'source.txt', root / 'new.txt', root / '.git/index', externa
         raise AssertionError('source write was allowed: ' + str(file))
 (root / 'generated/output.txt').write_text('generated')
 try:
+    os.link(root / 'source.txt', root / 'generated/new-hardlink.txt')
+except OSError:
+    pass
+else:
+    try:
+        (root / 'generated/new-hardlink.txt').write_text('hardlink escape')
+    except OSError:
+        pass
+    else:
+        raise AssertionError('new hardlink escaped protection')
+try:
     (root / 'generated/alias/source.txt').write_text('symlink escape')
 except OSError:
     pass
