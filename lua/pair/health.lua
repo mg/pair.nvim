@@ -43,6 +43,13 @@ function M.check()
   if info.custom then
     vim.health.info("Custom ACP agent restrictions must be verified in the agent itself")
   end
+  if info.backend == "antigravity" then
+    if info.command_sandbox then
+      vim.health.ok("Antigravity command filesystem protection: " .. info.command_sandbox)
+    else
+      vim.health.error("Antigravity commands require macOS sandbox-exec or Linux bubblewrap (bwrap)")
+    end
+  end
   if info.backend == "codex" and info.transport == "exec" then
     vim.health.warn("Codex exec cannot verify saved-session restoration or offer a model picker; use app-server")
   end

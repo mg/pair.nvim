@@ -54,6 +54,13 @@ local function send_and_wait(message, prompt_count, reply_count, backend)
     return trace_count("session/prompt") >= prompt_count
       and vim.fn.filereadable(record.session) == 1
       and completed_replies(record) >= reply_count
+      -- The last streamed text chunk precedes prompt completion. Wait for the
+      -- idle state before switching workspaces or backends.
+      and (function()
+        local header = vim.fn.bufnr("pair://header")
+        return header ~= -1 and (vim.api.nvim_buf_get_lines(header, 0, 1, false)[1] or "")
+          :find("Ready", 1, true) ~= nil
+      end)()
   end), "agent should receive message " .. message)
 end
 

@@ -9,4 +9,6 @@ Use a disposable project with no secrets. Install the backend's CLI or set its p
 5. Send a long request, watch whether text arrives before completion, and use `:PairCancel`. Start a new chat with `:PairNew`, then restore the previous chat with `:PairSessions` and ask a follow-up.
 6. Ask the agent to create a marker file in the disposable project. Confirm it remains absent, and note whether Pair blocked a tool event or the agent declined. A missing file alone does not prove an OS sandbox.
 
+For Antigravity command permissions, `tests/live_antigravity_commands.lua` runs a disposable Python check that verifies source writes fail, an approved generated-output directory is writable, and temporary test files work. The command must actually complete; model refusal is not a passing check. `tests/command_sandbox.lua` independently checks child-process and symlink protection without an account.
+
 For Claude Code ACP, `tests/live_claude_baseline.lua` automates this workflow after adapter authentication. For eligible legacy Gemini CLI routes, use `tests/live_gemini_baseline.lua`. Direct provider APIs currently have mock and loopback HTTP coverage; report the six interactive checks above for each real account route. Include redacted errors and state whether provider billing or a CLI subscription was used. Never send API keys to maintainers.

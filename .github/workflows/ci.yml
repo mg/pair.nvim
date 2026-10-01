@@ -26,6 +26,14 @@ jobs:
         run: |
           nvim --version | head -1
           python3 --version
+      - name: Enable command filesystem checks on Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y bubblewrap
+          if [ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
       - name: Run local protocol and editor checks
         run: bash tests/run_all.sh
       - name: Check clean manual and lazy.nvim installs

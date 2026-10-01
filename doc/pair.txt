@@ -167,8 +167,24 @@ new conversation with `:PairNew`; the old transcript stays on disk.
 Pair uses read-only Codex sandbox settings, disables configured Codex MCP
 servers and other external tools, and rejects ACP permission requests.
 Custom ACP agent restrictions are supplied by the user and must be checked
-in that agent. Pair does not run tests, builds, formatters, or other
-commands that might write project files on the agent's behalf.
+in that agent. Codex can run tests inside its read-only sandbox. ACP presets
+and direct API backends still expose inspection tools only.
+
+Antigravity can run commands and tests inside Pair's filesystem sandbox.
+It requires macOS sandbox-exec or Linux bubblewrap (bwrap). Commands may
+write private temporary storage and explicitly configured output folders:
+>
+  require('pair').setup({
+    backend = 'antigravity',
+    commands = { writable_paths = { 'build', 'generated' } },
+  })
+<
+Create these directories first. Paths are relative to the working directory.
+Output is written directly to disk without proposal review. Ordinary source
+stays read-only. Commands use saved files, even when prompts use unsaved
+buffers. A failed command stays in expandable tool activity. Pair never
+retries outside its filesystem sandbox. These output grants currently apply
+only to Antigravity. See docs/backends.md for details and limitations.
 
 Pair saves transcript text locally with recognizable tokens redacted, but
 arbitrary secrets cannot be detected reliably. Avoid putting credentials

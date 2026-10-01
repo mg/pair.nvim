@@ -1,15 +1,17 @@
 local uv = vim.uv or vim.loop
+local sandbox = require("pair.command_sandbox")
 
 local Client = {}
 Client.__index = Client
 
 local allowed_tools = {
   view_file = true, grep_search = true, list_dir = true, find_by_name = true,
+  run_command = true, command_status = true, send_command_input = true,
 }
 
 local denied_permissions = {
-  "write_file(*)", "command(*)", "mcp(*)", "read_url(*)",
-  "execute_url(*)", "unsandboxed(*)",
+  "write_file(*)", "mcp(*)", "read_url(*)",
+  "execute_url(*)",
 }
 
 local function close(handle)
@@ -18,20 +20,21 @@ end
 
 local function prepare_home(cwd)
   local root = vim.fn.stdpath("state") .. "/pair/antigravity/" .. vim.fn.sha256(cwd)
-  local cli = root .. "/antigravity-cli"
-  local agents = root .. "/config/agents"
+  local gemini = root .. "/.gemini"
+  local cli = gemini .. "/antigravity-cli"
+  local agents = gemini .. "/config/agents"
   vim.fn.mkdir(cli, "p")
   vim.fn.mkdir(agents, "p")
-  for _, dir in ipairs({ root, cli, root .. "/config", agents }) do
+  for _, dir in ipairs({ root, gemini, cli, gemini .. "/config", agents }) do
     pcall(uv.fs_chmod, dir, 448) -- 0700
   end
   local source = vim.api.nvim_get_runtime_file("config/pair-antigravity-agent.md", false)[1]
   if not source or vim.fn.filereadable(source) ~= 1 then
-    return nil, "Pair's Antigravity inspection agent is missing"
+    return nil, "Pair's Antigravity research agent is missing"
   end
-  local agent = agents .. "/pair-nvim-readonly.md"
+  local agent = agents .. "/pair-nvim-research.md"
   if vim.fn.writefile(vim.fn.readfile(source), agent) ~= 0 then
-    return nil, "Could not install Pair's Antigravity inspection agent"
+    return nil, "Could not install Pair's Antigravity research agent"
   end
   pcall(uv.fs_chmod, agent, 384) -- 0600
   local source_home = vim.env.GEMINI_HOME or vim.fn.expand("~/.gemini")
@@ -46,7 +49,12 @@ local function prepare_home(cwd)
     return nil, "Antigravity CLI login is missing. Sign in with agy, then retry"
   end
   local settings = {
-    permissions = { allow = {}, ask = {}, deny = denied_permissions },
+    -- The CLI's permission engine decides which tools run. The outer process
+    -- sandbox, inherited by shell children, decides which paths can be written.
+    -- "unsandboxed" means outside Antigravity's own terminal sandbox, not
+    -- outside Pair's inherited filesystem sandbox. Both grants are necessary
+    -- for headless commands; never launch this profile without sandbox.wrap.
+    permissions = { allow = { "command(*)", "unsandboxed(*)" }, ask = {}, deny = denied_permissions },
     allowNonWorkspaceAccess = false,
     trustedWorkspaces = { cwd },
     agentMode = "default",
@@ -57,7 +65,14 @@ local function prepare_home(cwd)
     return nil, "Could not write Pair's Antigravity restrictions"
   end
   pcall(uv.fs_chmod, settings_path, 384) -- 0600
-  return root
+  local shared = gemini .. "/config/config.json"
+  if vim.fn.writefile({ vim.json.encode({ userSettings = {
+    globalPermissionGrants = settings.permissions, permissionGrantsV2Migrated = true,
+  } }) }, shared) ~= 0 then
+    return nil, "Could not write Pair's Antigravity shared permissions"
+  end
+  pcall(uv.fs_chmod, shared, 384)
+  return root, nil, has_token and (source_home .. "/antigravity-cli") or nil
 end
 
 function Client.new(opts)
@@ -65,6 +80,7 @@ function Client.new(opts)
     command = opts.command or "agy", model = opts.model, cwd = opts.cwd,
     session_file = opts.session_file, on_update = opts.on_update,
     on_error = opts.on_error, ready = false, output_buffer = "", error_buffer = "",
+    writable_paths = opts.writable_paths or {},
   }, Client)
 end
 
@@ -126,14 +142,18 @@ function Client:_handle(event)
     elseif step.step_type == "tool" then
       local name = step.tool_name
       if not allowed_tools[name] then
-        self:_fail("Antigravity reported a tool outside Pair's inspection set: " .. tostring(name))
+        self:_fail("Antigravity reported a tool outside Pair's research set: " .. tostring(name))
         return
       end
       local detail = step.tool_info or {}
+      local command = type(detail.parameters) == "table" and detail.parameters.CommandLine or nil
+      local command_tool = name == "run_command" or name == "command_status" or name == "send_command_input"
       self.on_update({ sessionUpdate = "tool_call", toolCallId = tostring(step.step_index),
-        name = name, title = name, kind = "read",
+        name = name, title = command or name, command = command,
+        kind = command_tool and "execute" or "read",
         status = step.state == "DONE" and "completed"
-          or step.state == "FAILED" and "failed" or "in_progress",
+          or (step.state == "FAILED" or step.state == "ERROR") and "failed" or "in_progress",
+        error = detail.error,
         output = type(detail.output) == "string" and detail.output or nil })
     end
     return
@@ -167,9 +187,9 @@ function Client:start(callback)
     callback(nil, { message = "Antigravity CLI executable not found: " .. self.command })
     return
   end
-  local home, err = prepare_home(self.cwd)
+  local home, err, login_state = prepare_home(self.cwd)
   if not home then callback(nil, { message = err }); return end
-  local args = { "--agent", "pair-nvim-readonly", "--disable-slash-commands",
+  local args = { "--agent", "pair-nvim-research", "--disable-slash-commands",
     "--input-format", "stream-json", "--output-format", "stream-json" }
   if self.model then vim.list_extend(args, { "--model", self.model }) end
   local file = io.open(self.session_file, "r")
@@ -184,15 +204,30 @@ function Client:start(callback)
     self.session_id = saved
     vim.list_extend(args, { "--conversation", saved })
   end
+  local scratch = home .. "/scratch"
+  vim.fn.mkdir(scratch, "p")
+  pcall(uv.fs_chmod, scratch, 448)
+  local state_paths = { home }
+  if login_state then state_paths[#state_paths + 1] = login_state end
+  local launch, launch_err = sandbox.wrap(self.command, args, {
+    cwd = self.cwd, writable_paths = self.writable_paths, state_paths = state_paths,
+  })
+  if not launch then callback(nil, { message = launch_err }); return end
   self.stdin, self.stdout, self.stderr = uv.new_pipe(false), uv.new_pipe(false), uv.new_pipe(false)
   local values = vim.fn.environ()
-  values.GEMINI_HOME = home
+  -- agy 1.2.14 ignores GEMINI_HOME and resolves settings, agents, and login
+  -- relative to HOME. Isolate its actual home, not just a Gemini env variable.
+  values.HOME = home
+  values.GEMINI_HOME = home .. "/.gemini"
+  values.PWD = uv.fs_realpath(self.cwd) or self.cwd
   values.AGY_CLI_DISABLE_AUTO_UPDATE = "true"
+  values.TMPDIR, values.TMP, values.TEMP = scratch, scratch, scratch
+  values.PYTHONDONTWRITEBYTECODE = "1"
   local env = {}
   for key, value in pairs(values) do env[#env + 1] = key .. "=" .. value end
   self.start_callback = callback
-  self.process, self.pid = uv.spawn(self.command, {
-    args = args, cwd = self.cwd, env = env,
+  self.process, self.pid = uv.spawn(launch.command, {
+    args = launch.args, cwd = self.cwd, env = env,
     stdio = { self.stdin, self.stdout, self.stderr },
   }, function(code, signal)
     vim.schedule(function()

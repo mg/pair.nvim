@@ -2,6 +2,14 @@
 
 ## Current preview candidate
 
+### Antigravity command permissions (2026-10-01)
+
+Antigravity CLI 1.2.14 now runs inside Pair's filesystem sandbox: macOS Seatbelt or Linux bubblewrap. The project is read-only except explicitly configured `commands.writable_paths`; private agent state and temporary storage remain writable. Direct file-edit tools stay disabled. Codex can run checks within its native read-only sandbox; ACP presets and direct APIs still have inspection-only tools.
+
+A live command check on macOS with agy 1.2.14 ran a Python fixture, received its streamed result, wrote approved generated output and temporary files, and verified that a source overwrite was denied. The full live Antigravity workflow also passed with the corrected home setup. Local process checks exercise child inheritance, PTY creation, symlink escapes, hardlink grant rejection, Git protection, and default-denied output writes. Linux command protection is covered by the CI fixture, not an authenticated Antigravity run.
+
+The check uncovered that agy 1.2.14 ignores `GEMINI_HOME`: the previous profile and settings were not being loaded. Pair now supplies a private process home containing `.gemini/antigravity-cli/settings.json`, `.gemini/config/config.json` with shared permission grants, the custom agent, and a symlink to the existing CLI login. It does not rewrite the user's CLI settings. Antigravity histories created before this correction may require `:PairNew`, since those agent conversations were stored in the user's normal CLI home. Pair keeps its prior transcripts.
+
 Pair currently starts `codex app-server --stdio`. It uses the user's existing Codex CLI login, keeps one thread across chat and buffer actions, and streams answer deltas. Pair requests a read-only sandbox for each turn and receives tool events through the same connection. See the [Codex app-server protocol](https://learn.chatgpt.com/docs/app-server).
 
 The earlier `codex exec --json` transport remains available with `require("pair").setup({ transport = "exec" })`. Its JSONL events on the Codex version used during development contained completed agent messages but no text deltas, so it cannot give Pair the same live typing experience.
@@ -120,7 +128,7 @@ Copilot CLI 1.0.89 passed using the existing Copilot account on this machine and
 
 ### Antigravity M5.5 baseline (2026-09-30)
 
-The installed `agy` 1.2.11 CLI passed Pair's live workflow with the existing personal Google login. Pair uses Antigravity's [headless stream-json interface](https://antigravity.google/docs/cli/headless/) so chat and editor actions share a process and conversation ID. It stores an isolated Antigravity home under Neovim's state directory for each workspace, links the existing CLI OAuth token into that home, and installs a bundled primary agent limited to `view_file`, `grep_search`, `list_dir`, and `find_by_name`. Its [permission rules](https://antigravity.google/docs/permissions/) explicitly deny file writes, commands, MCP, web reads, and browser actions. Pair also stops on a reported tool outside the inspection set. The CLI owns enforcement; Pair does not provide an independent OS sandbox. The official [Antigravity ACP server](https://zed.dev/acp/agent/antigravity-acp) initialized here but hung on session creation with the personal account, so Pair uses the working CLI path.
+The installed `agy` 1.2.11 CLI passed Pair's live workflow with the existing personal Google login. Pair uses Antigravity's [headless stream-json interface](https://antigravity.google/docs/cli/headless/) so chat and editor actions share a process and conversation ID. The initial integration attempted to load an inspection agent and restrictive settings through `GEMINI_HOME`, and stopped on unsupported tool events. Subsequent command validation with 1.2.14 found that the CLI ignored that environment variable; the corrected home setup and independent filesystem sandbox are described above. The results below record the earlier workflow checks, not proof that its intended CLI profile was enforced. The official [Antigravity ACP server](https://zed.dev/acp/agent/antigravity-acp) initialized here but hung on session creation with the personal account, so Pair uses the working CLI path.
 
 | Behavior | Result |
 | --- | --- |

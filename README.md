@@ -73,9 +73,9 @@ Other account and model combinations remain unverified. CLI access uses the agen
 
 Your prompt and attached code go to the selected provider. Pair keeps local history under `stdpath('state')/pair`; `:PairNew` preserves older conversations.
 
-Agents receive inspection tools and return scoped proposals. Pair does not provide an editor write tool or an independent OS sandbox for CLI agents. Codex can read outside the workspace. See [SECURITY.md](SECURITY.md).
+Agents inspect the project and return scoped proposals. Antigravity can also run commands and tests inside Pair's filesystem sandbox, with optional writable output folders. Codex uses its own read-only sandbox. See [command setup](docs/backends.md#commands-and-generated-output) and [SECURITY.md](SECURITY.md).
 
-Pair supports one active workspace and one pending proposal at a time. Editing the target buffer while a proposal is being generated invalidates it. Tests and builds are yours to run.
+Pair supports one active workspace and one pending proposal at a time. Editing the target buffer while a proposal is being generated invalidates it. Commands use saved files on disk; prompts use your visible buffer.
 
 ## Help and contributing
 

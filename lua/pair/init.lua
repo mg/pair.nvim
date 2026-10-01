@@ -40,6 +40,7 @@ local defaults = {
   models = {},
   api_keys = {},
   api_endpoints = {},
+  commands = { writable_paths = {} },
   context_max_bytes = 128 * 1024,
   context_nearby_lines = 20,
 }
@@ -329,7 +330,13 @@ local function finish_turn(turn, result, err)
 end
 
 local function build_prompt(turn)
-  local prefix = "Pair session rules: inspect the project and discuss it, but do not write project files. Run only read-only inspection commands. Do not run tests, builds, generators, or formatters that may create files. For code changes, return a proposal for Pair to display in Neovim.\n\n"
+  local prefix = "Pair session rules: inspect the project and discuss it. You may run commands, tests, and builds when your tools permit them. Commands run against files on disk, so unsaved editor content may differ. Do not edit ordinary source files via commands or file-writing tools. For source changes, return a proposal for Pair to display in Neovim. Never bypass tool or filesystem restrictions.\n"
+  if config.backend == "antigravity" then
+    prefix = prefix .. "The project is read-only to commands except these user-approved output directories: "
+      .. (#config.commands.writable_paths > 0 and table.concat(config.commands.writable_paths, ", ") or "none")
+      .. ". Use $TMPDIR for temporary files. Generated output in approved directories is written directly to disk.\n"
+  end
+  prefix = prefix .. "\n"
   if #outcomes > 0 then
     prefix = prefix .. "Editor outcomes since our last turn:\n" .. table.concat(outcomes, "\n") .. "\n\n"
     outcomes = {}
@@ -412,6 +419,7 @@ local function ensure_client(callback)
   client = backend.new({
     provider = spec.provider, api_key = spec.api_key, key_env = spec.key_env,
     endpoint = spec.endpoint,
+    writable_paths = config.commands.writable_paths,
     command = spec.command,
     args = spec.args,
     env = spec.env,
@@ -835,6 +843,7 @@ local function restore_record(record, root, backend, previous_id)
     provider = spec.provider, api_key = spec.api_key, key_env = spec.key_env,
     endpoint = spec.endpoint,
     command = spec.command, args = spec.args, env = spec.env,
+    writable_paths = config.commands.writable_paths,
     session_meta = spec.session_meta,
     allowed_tool_names = spec.allowed_tool_names,
     allowed_tool_kinds = spec.allowed_tool_kinds,
@@ -985,6 +994,7 @@ function M.pick_backend()
       provider = spec.provider, api_key = spec.api_key, key_env = spec.key_env,
       endpoint = spec.endpoint,
       command = spec.command, args = spec.args, env = spec.env,
+      writable_paths = config.commands.writable_paths,
       session_meta = spec.session_meta,
       allowed_tool_names = spec.allowed_tool_names,
       allowed_tool_kinds = spec.allowed_tool_kinds,
@@ -1116,6 +1126,7 @@ function M.health_info()
     key_present = spec and spec.kind == "direct" and ((type(spec.api_key) == "string" and spec.api_key ~= "")
       or type(spec.api_key) == "function" or (vim.env[spec.key_env] or "") ~= "") or false,
     spec_error = err,
+    command_sandbox = config.backend == "antigravity" and require("pair.command_sandbox").available() or nil,
     context_max_bytes = config.context_max_bytes,
     context_nearby_lines = config.context_nearby_lines,
   }
@@ -1133,6 +1144,13 @@ function M.setup(opts)
   end
   local _, backend_err = backends.resolve(config.backend, config)
   if backend_err then error(backend_err) end
+  if type(config.commands) ~= "table" or type(config.commands.writable_paths) ~= "table"
+    or not vim.islist(config.commands.writable_paths) then
+    error("Pair commands.writable_paths must be a list of relative output directories")
+  end
+  for _, path in ipairs(config.commands.writable_paths) do
+    if type(path) ~= "string" then error("Pair command output paths must be strings") end
+  end
   if type(config.context_max_bytes) ~= "number" or config.context_max_bytes < 1
     or config.context_max_bytes % 1 ~= 0 then
     error("Pair context_max_bytes must be a positive integer")

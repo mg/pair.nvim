@@ -53,11 +53,11 @@ The main transcript should read like a conversation. Research commands and other
 
 ## Product rules
 
-- The agent does not directly edit project files. Pair applies a completed proposal to an unsaved Neovim buffer; the user's normal save workflow persists it and accepts the proposal.
+- The agent does not directly edit ordinary source files. Pair applies a completed proposal to an unsaved Neovim buffer; the user's normal save workflow persists it and accepts the proposal. Users may separately allow commands to write generated code or build output in explicit directories.
 - A proposal names one target buffer and one bounded range for the first version. An insertion uses an empty range anchored at the cursor. The plugin rejects proposals outside that scope.
 - A proposal is tied to the buffer version it was based on. If the selected region or the code around an insertion point changes while the agent works, Pair asks for a fresh proposal instead of silently overwriting the user's work.
 - Chat and buffer actions use the same session and appear in one timeline. Buffer actions may be visually compact in chat, but they are not hidden from it.
-- Research commands need a real read-only boundary for the project. Some commands, including tests and builds, may create files; that behavior needs a deliberate policy before they are offered as agent tools.
+- Commands may inspect, test, build, or generate output. Ordinary source remains protected by a filesystem boundary; writable temporary storage and explicit output directories support tools that need to create files. Output grants are separate from source proposal review, and their effects must be clear to the user.
 - Explanations should be available when useful, but should not be required reading before accepting every edit.
 - Pair should make the scope and effect of every proposed change obvious. If the buffer moves on while the agent works, it must refuse a stale proposal instead of guessing.
 - The main workflow should work with plain Neovim and any launch-supported CLI agent or direct API backend. Backend choice must not change how chat, Ask, Change, Insert, or proposal review works.

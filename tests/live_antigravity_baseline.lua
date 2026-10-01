@@ -149,7 +149,7 @@ report.editor_kept_insert = api.nvim_buf_get_lines(source_buf, 1, 2, false)[1] =
 if ok and (not report.disk_unchanged or not report.editor_kept_insert) then
   ok, failure = false, "Antigravity changed the disk file or lost the accepted editor insertion"
 end
-if vim.v.errmsg:find("Antigravity reported a tool outside Pair's inspection set: write_to_file", 1, true) then
+if vim.v.errmsg:find("Antigravity reported a tool outside Pair's research set: write_to_file", 1, true) then
   report.write_guarded = true
 elseif vim.v.errmsg ~= "" then
   report.nvim_error = vim.v.errmsg
