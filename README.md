@@ -17,7 +17,7 @@ https://github.com/user-attachments/assets/9a9e2d46-a3fb-4e9d-bd27-d2c2546eff8c
 
 </div>
 
-Pair is an early preview. Some backends still need live testing.
+Pair [v0.1.0](https://github.com/sampsn/pair.nvim/releases/tag/v0.1.0) is an alpha release. Some backends still need live testing.
 
 ## Install
 

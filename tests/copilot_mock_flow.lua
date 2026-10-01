@@ -42,19 +42,25 @@ local function contains(needle)
   end
   return false
 end
+local function trace_lines(path)
+  if vim.fn.filereadable(path) ~= 1 then return {} end
+  local lines = vim.fn.readfile(path, "b")
+  -- The mock appends JSONL while we poll. Only decode newline-terminated records;
+  -- the final item is either empty or a record that is still being written.
+  table.remove(lines)
+  return lines
+end
 local function requests(method)
   local result = {}
-  if vim.fn.filereadable(request_trace) ~= 1 then return result end
-  for _, line in ipairs(vim.fn.readfile(request_trace)) do
+  for _, line in ipairs(trace_lines(request_trace)) do
     local item = vim.json.decode(line)
     if item.method == method then result[#result + 1] = item.params end
   end
   return result
 end
 local function snapshot(index)
-  wait_for(function() return vim.fn.filereadable(prompt_trace) == 1
-    and #vim.fn.readfile(prompt_trace) >= index end, "prompt " .. index)
-  local prompt = vim.json.decode(vim.fn.readfile(prompt_trace)[index])
+  wait_for(function() return #trace_lines(prompt_trace) >= index end, "prompt " .. index)
+  local prompt = vim.json.decode(trace_lines(prompt_trace)[index])
   return vim.json.decode(assert(prompt:match("<editor_snapshot_json>\n(.-)\n</editor_snapshot_json>")))
 end
 local function ready()
@@ -65,6 +71,13 @@ end
 local function source() api.nvim_set_current_win(source_win) end
 
 local ok, err = pcall(function()
+  local complete = '{"method":"pair-test-trace","params":{}}'
+  vim.fn.writefile({ complete, '{"method":"pair-test-trace","params":' }, request_trace, "b")
+  assert(#requests("pair-test-trace") == 1, "polling must ignore a partially written record")
+  vim.fn.writefile({ complete, complete, "" }, request_trace, "b")
+  assert(#requests("pair-test-trace") == 2, "the completed record must appear on the next poll")
+  vim.fn.delete(request_trace)
+
   pair.send("pair-test-unnamed-read")
   wait_for(function() return contains("read complete") end, "unnamed read result")
   wait_for(ready, "read completion")
