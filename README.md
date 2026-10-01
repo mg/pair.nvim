@@ -57,6 +57,8 @@ For other backends or a local checkout, see [backend setup](docs/backends.md).
 
 Use `:PairBackends` to switch agents and `:PairModel` to choose a model. Each backend has its own conversation history.
 
+Pair remembers your last backend and selected model for each backend across restarts and `:PairNew`. Set `remember_selection = false` to use your configured defaults at startup.
+
 | Backend | Validation |
 | --- | --- |
 | Codex | Live workflow passed with an existing CLI login |
@@ -68,6 +70,27 @@ Use `:PairBackends` to switch agents and `:PairModel` to choose a model. Each ba
 | OpenAI, Anthropic, Gemini APIs | Experimental; mock and local HTTP workflows tested |
 
 Other account and model combinations remain unverified. CLI access uses the agent's login; direct APIs use separately billed API keys. See [setup instructions](docs/backends.md) and [tested versions and results](TRANSPORT.md).
+
+**OpenCode:** If a free model says it only works inside OpenCode, connect a provider with `opencode auth login`, then choose its model with `:PairModel`. For example, `:PairModel openrouter/openai/gpt-4.1-mini` uses an OpenRouter key and its API billing.
+
+## Commands and writable folders
+
+Antigravity can run tests and builds while source files stay read-only. To allow build output or generated code, create dedicated folders in your project:
+
+```sh
+mkdir -p build coverage generated
+```
+
+Then configure Pair:
+
+```lua
+require("pair").setup({
+  backend = "antigravity",
+  commands = { writable_paths = { "build", "coverage", "generated" } },
+})
+```
+
+For example, ask “Run `cmake -S . -B build && cmake --build build`,” or “Run my client generator with output set to `generated/`.” Paths are relative to Neovim's working directory and must already exist. The agent can create, replace, or delete files in those folders directly; source edits elsewhere still require a proposal. Save your buffer before asking for tests. These grants currently apply to Antigravity only. See [command setup](docs/backends.md#commands-and-generated-output) for details.
 
 ## Privacy and limits
 

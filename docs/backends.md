@@ -10,6 +10,8 @@ require("pair").setup({ backend = "codex" })
 
 Use `:PairModel` to choose a model or `:PairModel model-id` to enter one. Availability depends on your account. See [TRANSPORT.md](../TRANSPORT.md) for tested versions, account routes, and tool restrictions.
 
+Pair remembers the last backend and the last selected model for each backend in `stdpath('state')/pair/preferences.json`. These choices override setup defaults on your next Neovim launch; `:PairNew` keeps the selected model. Resuming an older conversation keeps that conversation's saved model. Use `remember_selection = false` to start with your configured defaults instead. No credentials are stored in this preferences file.
+
 ## CLI agents
 
 | Backend name | Executable | Setup |
@@ -32,7 +34,11 @@ require("pair").setup({
 })
 ```
 
-OpenCode's default free model refused ACP requests in testing. Other provider/model routes remain unverified. Antigravity does not report a model catalog; set `models.antigravity` before starting a conversation if needed. The optional older Codex transport, `transport = "exec"`, does not offer the same streaming or verified session restoration as app-server.
+OpenCode's default free model refused ACP requests in testing: some free models restrict use to OpenCode's own interface. A new session does not change that restriction. Connect an eligible provider using `opencode auth login` (or `/connect` inside OpenCode), then choose a provider model with `:PairModel`. Pair uses the CLI's existing provider credentials. [OpenCode's provider guide](https://opencode.ai/docs/providers/#openrouter) explains OpenRouter setup; other provider/model routes remain unverified.
+
+Antigravity's picker loads the account's current catalog using `agy models`. Choosing a model restarts the headless process with `--model` and resumes the same saved conversation. You can also configure an initial `models.antigravity` default. The optional older Codex transport, `transport = "exec"`, does not offer the same streaming or verified session restoration as app-server.
+
+Gemini CLI remains maintained for enterprise/Google Cloud and paid API-key access. Its personal free, Pro, and Ultra routes moved to Antigravity; see [Google's transition announcement](https://github.com/google-gemini/gemini-cli/discussions/27274). Pair keeps the experimental Gemini adapter for eligible accounts.
 
 ## Commands and generated output
 

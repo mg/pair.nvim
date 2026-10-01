@@ -94,6 +94,12 @@ for line in sys.stdin:
         if prompt_trace:
             with open(prompt_trace, "a", encoding="utf-8") as log:
                 log.write(json.dumps(prompt) + "\n")
+        if os.getenv("PAIR_MOCK_FREE_ERROR") and model == "mock/default":
+            send({"jsonrpc": "2.0", "id": request_id, "error": {
+                "message": "OpenCode's free tier can only be used from within OpenCode."
+            }})
+            pending = None
+            continue
         if prompt == "unsafe tool" or "pair-test-unsafe" in prompt:
             send({"jsonrpc": "2.0", "method": "session/update", "params": {
                 "sessionId": "mock-session", "update": {

@@ -7,6 +7,7 @@ local backends = require("pair.backends")
 local context = require("pair.context")
 local edit = require("pair.edit")
 local sessions = require("pair.sessions")
+local preferences = require("pair.preferences")
 local ui = require("pair.ui")
 
 local M = {}
@@ -36,6 +37,7 @@ local defaults = {
   keymaps = true,
   transport = "app-server",
   backend = "codex",
+  remember_selection = true,
   agents = {},
   models = {},
   api_keys = {},
@@ -55,6 +57,15 @@ end
 
 local function notice(message, level)
   vim.notify("Pair: " .. message, level or vim.log.levels.INFO)
+end
+
+local function remember_selection(model)
+  -- New conversations use the last selected model even when disk persistence
+  -- is disabled. A restored conversation keeps its own saved model.
+  if model then config.models[config.backend] = model end
+  if not config.remember_selection then return end
+  local saved, err = preferences.save(config.backend, model)
+  if not saved then notice("Selection changed, but could not be remembered: " .. tostring(err), vim.log.levels.WARN) end
 end
 
 local function error_text(err)
@@ -88,6 +99,12 @@ end
 
 local function recovery_action(message)
   local lower = message:lower()
+  if config.backend == "opencode" and lower:find("free", 1, true)
+    and (lower:find("opencode", 1, true) or lower:find("open code", 1, true)) then
+    return " This model restricts access from external clients. Connect a provider with"
+      .. " `opencode auth login`, then use :PairModel to choose a provider/model"
+      .. " such as openrouter/openai/gpt-4.1-mini. :PairNew will not remove this restriction."
+  end
   if lower:find(":pairnew", 1, true) then return "" end
   for _, marker in ipairs({ "context limit", "context window", "history limit",
     "session not found", "session expired", "conversation not found",
@@ -932,6 +949,7 @@ function M.backend(name)
   outcomes = {}
   local record, history_err = ensure_history()
   if not record then notice(history_err, vim.log.levels.ERROR); return end
+  remember_selection(session_model)
   ui.add("Pair", "Using " .. name .. ". This backend has its own conversation; its next message will connect.")
   update_status()
 end
@@ -1034,6 +1052,7 @@ function M.pick_backend()
       current_record = record
       history_root = root .. "\0" .. choice.name
       session_model = sessions.read_model(record) or session.model or spec.model
+      remember_selection(session_model)
       status_error = false
       outcomes = {}
       edit.dismiss_answer()
@@ -1079,15 +1098,28 @@ function M.model(value)
           notice("Finish the current request before changing models", vim.log.levels.WARN)
           return
         end
+        starting = true
+        update_status()
         selected_client:set_model(choice.value, function(model, set_err)
           if selected_client ~= client or generation ~= session_generation then return end
-          if set_err then notice(error_text(set_err), vim.log.levels.ERROR); return end
+          starting = false
+          if set_err then
+            notice(error_text(set_err), vim.log.levels.ERROR)
+            if not selected_client.ready then queue = {}; status_error = true end
+            update_status()
+            finish_connections(selected_client.ready, error_text(set_err))
+            run_next()
+            return
+          end
           local saved, save_err = sessions.save_model(record, model)
           if not saved then notice("Model changed, but Pair could not save the choice: " .. save_err,
             vim.log.levels.ERROR) end
           session_model = model
+          remember_selection(model)
           update_status()
           ui.add("Pair", "Using " .. backend .. "/" .. model .. " in this conversation")
+          finish_connections(true)
+          run_next()
         end)
       end
       if value and value ~= "" then
@@ -1144,6 +1176,26 @@ function M.setup(opts)
   end
   local _, backend_err = backends.resolve(config.backend, config)
   if backend_err then error(backend_err) end
+  if type(config.remember_selection) ~= "boolean" then
+    error("Pair remember_selection must be a boolean")
+  end
+  if config.remember_selection then
+    local saved, read_err = preferences.read()
+    if read_err then notice(read_err, vim.log.levels.WARN) end
+    if saved then
+      for backend, model in pairs(saved.models) do
+        if backends.resolve(backend, config) then config.models[backend] = model end
+      end
+      if saved.backend then
+        if backends.resolve(saved.backend, config) then
+          config.backend = saved.backend
+        else
+          notice("Saved backend " .. saved.backend .. " is no longer configured; using " .. config.backend,
+            vim.log.levels.WARN)
+        end
+      end
+    end
+  end
   if type(config.commands) ~= "table" or type(config.commands.writable_paths) ~= "table"
     or not vim.islist(config.commands.writable_paths) then
     error("Pair commands.writable_paths must be a list of relative output directories")

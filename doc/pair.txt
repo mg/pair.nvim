@@ -33,6 +33,7 @@ Optional setup fields include: >lua
     command = "codex",
     transport = "app-server", -- or "exec" for the older Codex path
     keymaps = true,
+    remember_selection = true, -- restore last backend and selected models
     context_max_bytes = 128 * 1024,
     context_nearby_lines = 20,
     models = {},               -- e.g. { opencode = "provider/model" }
@@ -106,8 +107,14 @@ the visible chat. A startup or restoration failure leaves the current
 conversation in place. `:PairBackend {name}` switches directly and connects
 on the next message. Context is never shared between backends. `:PairModel`
 shows models reported by the active agent; `:PairModel {id}` selects one.
-The choice is saved for that conversation. A listed model may still be
-unavailable to your account when a request starts. The Codex `exec`
+The choice is saved for that conversation and becomes the default for new
+conversations on that backend. Pair remembers your backend and model choices
+across Neovim launches; saved choices override setup defaults. Set
+`remember_selection = false` to disable that startup preference. Restoring
+an older conversation keeps its own model. Antigravity fetches `agy models`
+and restarts its process on a model change, retaining the conversation ID.
+A listed model may still be unavailable to your account when a request
+starts. The Codex `exec`
 transport cannot verify restoration or offer a model picker.
 
 Direct API backends are `openai_api`, `anthropic_api`, and `gemini_api`.

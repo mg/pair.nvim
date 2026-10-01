@@ -2,6 +2,16 @@
 
 ## Current preview candidate
 
+### Model selection and startup preferences (2026-10-01)
+
+Antigravity's `:PairModel` picker now fetches the account catalog through `agy models` within the same filesystem sandbox and private home as its research process. Selecting a model waits for the old process to exit, then starts a new one with `--model` and the saved `--conversation` ID. Launch generations prevent callbacks from the old process affecting the replacement. Empty conversations can also change model before their first prompt. The CLI's [headless interface](https://antigravity.google/docs/cli/headless/) supports model selection at launch rather than in-stream `/model` commands.
+
+Pair remembers the last backend and selected model per backend in an owner-only preferences file. New Neovim launches restore those choices over setup defaults; `:PairNew` keeps the current backend's selected default. Existing conversations retain their own saved model. `remember_selection = false` disables global preference reads and writes. Invalid preference files warn and fall back to configuration; failed picker switches and model selections do not overwrite the preferences.
+
+The live Antigravity check used agy 1.2.14 and the existing personal login: the account returned 14 model choices, switching from `gemini-3.8-flash-low` to `gemini-3.8-flash-medium` retained the conversation ID and recalled a token from the previous model's turn, and `:PairNew` kept the second model. CLI init events reported each requested model. `tests/live_antigravity_models.lua` repeats that check. Mock process checks also verify launch arguments, cancellation during a switch, catalog errors, and source write denial with approved generated output after switching. Separate Neovim processes verify backend/model persistence and configuration opt-out. The non-live suite passes on macOS with Neovim 0.11.7 and 0.12.5.
+
+OpenCode's free-tier rejection now gives provider setup and `:PairModel` guidance instead of suggesting a fresh conversation as a fix. Its existing OpenRouter route remains available; Pair does not bypass external-client restrictions or change the CLI's provider credentials. Gemini CLI remains supported upstream for enterprise/Google Cloud and paid API-key access, so it has not been uninstalled or removed from Pair; Antigravity is the tested personal-account route.
+
 ### Antigravity command permissions (2026-10-01)
 
 Antigravity CLI 1.2.14 now runs inside Pair's filesystem sandbox: macOS Seatbelt or Linux bubblewrap. The project is read-only except explicitly configured `commands.writable_paths`; private agent state and temporary storage remain writable. Direct file-edit tools stay disabled. Codex can run checks within its native read-only sandbox; ACP presets and direct APIs still have inspection-only tools.

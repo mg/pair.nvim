@@ -85,8 +85,11 @@ function Client.new(opts)
 end
 
 function Client:_shutdown()
+  self.launch_generation = (self.launch_generation or 0) + 1
   self.stopping = true
   self.ready = false
+  local switching = self.switching
+  self.switching = nil
   if self.process and not self.process:is_closing() then
     pcall(function() self.process:kill("sigterm") end)
   end
@@ -95,6 +98,7 @@ function Client:_shutdown()
   close(self.stderr)
   close(self.process)
   self.stdin, self.stdout, self.stderr, self.process = nil, nil, nil, nil
+  if switching then switching.callback(nil, { message = "Antigravity model switch was stopped" }) end
 end
 
 function Client:_fail(message)
@@ -213,6 +217,10 @@ function Client:start(callback)
     cwd = self.cwd, writable_paths = self.writable_paths, state_paths = state_paths,
   })
   if not launch then callback(nil, { message = launch_err }); return end
+  self.stopping = false
+  self.output_buffer, self.error_buffer = "", ""
+  self.launch_generation = (self.launch_generation or 0) + 1
+  local generation = self.launch_generation
   self.stdin, self.stdout, self.stderr = uv.new_pipe(false), uv.new_pipe(false), uv.new_pipe(false)
   local values = vim.fn.environ()
   -- agy 1.2.14 ignores GEMINI_HOME and resolves settings, agents, and login
@@ -225,12 +233,28 @@ function Client:start(callback)
   values.PYTHONDONTWRITEBYTECODE = "1"
   local env = {}
   for key, value in pairs(values) do env[#env + 1] = key .. "=" .. value end
+  self.launch_env, self.state_paths = values, state_paths
+  local function schedule(action)
+    vim.schedule(function()
+      if self.launch_generation == generation then action() end
+    end)
+  end
   self.start_callback = callback
   self.process, self.pid = uv.spawn(launch.command, {
     args = launch.args, cwd = self.cwd, env = env,
     stdio = { self.stdin, self.stdout, self.stderr },
   }, function(code, signal)
-    vim.schedule(function()
+    schedule(function()
+      if self.switching then
+        local switching = self.switching
+        self.switching = nil
+        self:_shutdown()
+        self.model = switching.value
+        self:start(function(session, start_err)
+          switching.callback(session and self.model or nil, start_err)
+        end)
+        return
+      end
       if not self.stopping then
         self:_fail("Antigravity CLI exited (code " .. code .. ", signal " .. signal .. "): "
           .. self.error_buffer:sub(-500))
@@ -242,7 +266,8 @@ function Client:start(callback)
     return
   end
   self.stdout:read_start(function(read_err, chunk)
-    if read_err then vim.schedule(function() self:_fail(tostring(read_err)) end)
+    if self.launch_generation ~= generation then return end
+    if read_err then schedule(function() self:_fail(tostring(read_err)) end)
     elseif chunk then
       self.output_buffer = self.output_buffer .. chunk
       while true do
@@ -252,17 +277,19 @@ function Client:start(callback)
         self.output_buffer = self.output_buffer:sub(newline + 1)
         local ok, event = pcall(vim.json.decode, line)
         if not ok then
-          vim.schedule(function() self:_fail("Antigravity sent invalid stream JSON") end)
+          schedule(function() self:_fail("Antigravity sent invalid stream JSON") end)
         else
-          vim.schedule(function() self:_handle(event) end)
+          schedule(function() self:_handle(event) end)
         end
       end
     else
-      vim.schedule(function() self:_fail("Antigravity closed its output: " .. self.error_buffer:sub(-500)) end)
+      schedule(function() self:_fail("Antigravity closed its output: " .. self.error_buffer:sub(-500)) end)
     end
   end)
   self.stderr:read_start(function(_, chunk)
-    if chunk then self.error_buffer = (self.error_buffer .. chunk):sub(-4000) end
+    if chunk and self.launch_generation == generation then
+      self.error_buffer = (self.error_buffer .. chunk):sub(-4000)
+    end
   end)
   -- Headless Antigravity emits `init` only after its first stdin prompt.
   self.ready = true
@@ -299,11 +326,64 @@ function Client:reset()
 end
 
 function Client:list_models(callback)
-  callback(self.model and { { value = self.model, label = self.model } } or {})
+  if not self.ready then callback(nil, { message = "Antigravity is not ready" }); return end
+  local launch, err = sandbox.wrap(self.command, { "models" }, {
+    cwd = self.cwd, writable_paths = self.writable_paths, state_paths = self.state_paths,
+  })
+  if not launch then callback(nil, { message = err }); return end
+  local generation = self.launch_generation
+  local command = { launch.command }
+  vim.list_extend(command, launch.args)
+  vim.system(command, { cwd = self.cwd, env = self.launch_env, text = true, timeout = 15000 }, function(result)
+    vim.schedule(function()
+      if self.launch_generation ~= generation or not self.ready then
+        callback(nil, { message = "Antigravity changed while listing models; try again" })
+        return
+      end
+      if result.code ~= 0 then
+        callback(nil, { message = "Could not list Antigravity models: "
+          .. vim.trim((result.stderr or ""):sub(-500)) })
+        return
+      end
+      local choices = {}
+      for line in (result.stdout or ""):gmatch("[^\r\n]+") do
+        local value, label = line:match("^([%w._%-]+)%s+(.+)$")
+        if value then choices[#choices + 1] = { value = value, label = vim.trim(label) } end
+      end
+      self.models = choices
+      callback(choices)
+    end)
+  end)
 end
 
-function Client:set_model(_, callback)
-  callback(nil, { message = "Set Antigravity's model in setup().models before starting a conversation" })
+function Client:set_model(value, callback)
+  if not self.ready or self.turn or self.switching then
+    callback(nil, { message = "Finish the Antigravity request before changing models" })
+    return
+  end
+  local found = false
+  for _, choice in ipairs(self.models or {}) do
+    if choice.value == value then found = true end
+  end
+  if not found then callback(nil, { message = "Antigravity model is not available: " .. tostring(value) }); return end
+  if self.model == value then callback(value); return end
+  -- The headless CLI selects its model at launch. Wait for its old process to
+  -- exit, then resume the saved conversation with the new --model argument.
+  self.switching = { value = value, callback = callback }
+  self.stopping, self.ready = true, false
+  local process = self.process
+  local ok, err = process:kill("sigterm")
+  if not ok then
+    self.switching = nil
+    self.stopping, self.ready = false, true
+    callback(nil, { message = "Could not stop Antigravity to switch models: " .. tostring(err) })
+    return
+  end
+  vim.defer_fn(function()
+    if self.switching and self.process == process and not process:is_closing() then
+      pcall(function() process:kill("sigkill") end)
+    end
+  end, 2500)
 end
 
 return Client

@@ -4,6 +4,13 @@ import os
 import sys
 import subprocess
 
+if sys.argv[1:] == ["models"]:
+    if os.environ.get("PAIR_AGY_MODELS_FAIL"):
+        print("mock model catalog unavailable", file=sys.stderr)
+        sys.exit(1)
+    print("mock-first\tFirst model\nmock-second\tSecond model")
+    sys.exit(0)
+
 trace = os.environ.get("PAIR_AGY_TRACE")
 if trace:
     with open(trace, "a", encoding="utf-8") as file:
