@@ -4,6 +4,8 @@ Code with an AI agent while staying hands-on in Neovim.
 
 Chat about your project, ask about selected code, or request a change exactly where you want it. Chat and editor actions share one agent session. Proposed code appears in your unsaved buffer for you to inspect, accept, or reject.
 
+![Pair.nvim in Zig: chat, ask about selected code, insert a helper, then wire up its caller by hand.](assets/pair-workflow.gif)
+
 I built this with AI because I wanted a simple tool for this workflow. Contributions and ideas are welcome.
 
 Pair is an early preview. Some backends still need live testing.
