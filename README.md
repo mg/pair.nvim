@@ -11,8 +11,11 @@ Chat about your project, ask about selected code, or request a change exactly wh
 >I built Pair to keep the conversation, research assistance, and code
 >speed while giving me more control over what gets written and where.
 
+<div align="center">
 
 https://github.com/user-attachments/assets/9a9e2d46-a3fb-4e9d-bd27-d2c2546eff8c
+
+</div>
 
 Pair is an early preview. Some backends still need live testing.
 
