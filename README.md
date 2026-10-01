@@ -4,9 +4,12 @@ Code with an AI agent while staying hands-on in Neovim.
 
 Chat about your project, ask about selected code, or request a change exactly where you want it. Chat and editor actions share one agent session. Proposed code appears in your unsaved buffer for you to inspect, accept, or reject.
 
-[Watch the demo (MP4)](assets/pair-workflow.mp4)
+ **A note from the creator**
+I like coding with agents, but I missed being hands-on with the code. I noticed my knowledge of the codebase regressing.
+I built Pair to keep the conversation and assistance while giving me
+more control over what gets written and where.
 
-I built this with AI because I wanted a simple tool for this workflow. Contributions and ideas are welcome.
+https://github.com/user-attachments/assets/9a9e2d46-a3fb-4e9d-bd27-d2c2546eff8c
 
 Pair is an early preview. Some backends still need live testing.
 
@@ -25,12 +28,7 @@ With lazy.nvim:
 }
 ```
 
-Pair uses Codex by default. Install the `codex` CLI and sign in with `codex login`. Open a project and set Neovim's working directory to its root:
-
-```vim
-:cd /path/to/project
-:PairChat
-```
+Pair uses Codex by default. Install the `codex` CLI and sign in with `codex login`.
 
 For other backends or a local checkout, see [backend setup](docs/backends.md).
 
