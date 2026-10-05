@@ -222,7 +222,7 @@ function Client:start(callback)
   self.stderr:read_start(function(_, chunk)
     if chunk then self.error_buffer = (self.error_buffer .. chunk):sub(-4000) end
   end)
-  self:_request("initialize", { clientInfo = { name = "pair_nvim", title = "Pair.nvim", version = "0.1.0" } }, function(_, init_err)
+  self:_request("initialize", { clientInfo = { name = "pair_nvim", title = "Pair.nvim", version = "0.1.1" } }, function(_, init_err)
     if init_err then self:_fail(error_message(init_err)); return end
     self:_write({ method = "initialized", params = {} })
     local file = io.open(self.session_file, "r")

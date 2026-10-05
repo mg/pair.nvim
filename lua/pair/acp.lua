@@ -341,7 +341,7 @@ function Client:start(callback)
   self:_request("initialize", {
     protocolVersion = 1,
     clientCapabilities = { fs = { readTextFile = false, writeTextFile = false }, terminal = false },
-    clientInfo = { name = "pair.nvim", version = "0.1.0" },
+    clientInfo = { name = "pair.nvim", version = "0.1.1" },
   }, function(result, err)
     if err then self:_fail("ACP initialization failed: " .. error_text(err)); return end
     if not result or result.protocolVersion ~= 1 then

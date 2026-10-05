@@ -899,7 +899,9 @@ function M.prompt(title, callback, opts)
   api.nvim_set_option_value("filetype", "pairprompt", { buf = buf })
   api.nvim_buf_set_lines(buf, 0, -1, false, { "" })
   local win = api.nvim_open_win(buf, true, {
-    relative = "cursor",
+    relative = opts.anchor_row ~= nil and "win" or "cursor",
+    win = opts.anchor_row ~= nil and source_win or nil,
+    bufpos = opts.anchor_row ~= nil and { opts.anchor_row, 0 } or nil,
     row = 1,
     col = 0,
     width = width,

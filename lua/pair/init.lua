@@ -603,7 +603,7 @@ function M.ask(message, supplied_target)
   else
     ui.prompt("Ask about selection", function(input, mode, done)
       return enqueue({ kind = "ask", target = target, message = input }, mode, done)
-    end, { source_buf = target.buf, target = target })
+    end, { source_buf = target.buf, target = target, anchor_row = target.end_row })
   end
 end
 
