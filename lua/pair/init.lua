@@ -598,7 +598,8 @@ end
 
 function M.ask(message, supplied_target)
   if not source_buffer() then return end
-  local target, err = supplied_target or edit.selection()
+  local target, err = supplied_target, nil
+  if not target then target, err = edit.selection() end
   if not target then notice(err, vim.log.levels.WARN); return end
   if message and vim.trim(message) ~= "" then
     enqueue({ kind = "ask", target = target, message = vim.trim(message) })
@@ -611,7 +612,8 @@ end
 
 function M.change(message, supplied_target)
   if not source_buffer() then return end
-  local target, err = supplied_target or edit.selection()
+  local target, err = supplied_target, nil
+  if not target then target, err = edit.selection() end
   if not target then notice(err, vim.log.levels.WARN); return end
   if message and vim.trim(message) ~= "" then
     enqueue({ kind = "edit", target = target, message = vim.trim(message) })
