@@ -5,6 +5,7 @@ local presets = {
   anthropic_api = { kind = "direct", provider = "anthropic" },
   gemini_api = { kind = "direct", provider = "gemini" },
   codex = { kind = "codex", command = "codex" },
+  pi = { kind = "pi", command = "pi" },
   claude = {
     kind = "acp",
     command = "claude-agent-acp",
@@ -82,7 +83,7 @@ local function gemini_restrictions()
 end
 
 function M.names(config)
-  local names = { "codex", "claude", "copilot", "gemini", "antigravity", "opencode",
+  local names = { "codex", "claude", "copilot", "gemini", "antigravity", "opencode", "pi",
     "openai_api", "anthropic_api", "gemini_api" }
   for name in pairs(config.agents or {}) do
     if not presets[name] then names[#names + 1] = name end
@@ -122,6 +123,9 @@ function M.resolve(name, config)
   if spec.kind == "codex" then
     return { kind = "codex", command = name == "codex" and config.command or spec.command,
       model = (config.models or {})[name] }
+  end
+  if spec.kind == "pi" then
+    return { kind = "pi", command = spec.command, model = (config.models or {})[name] }
   end
   if spec.kind == "antigravity" then
     return { kind = "antigravity", command = spec.command,

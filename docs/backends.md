@@ -16,6 +16,7 @@ Pair remembers the last backend and the last selected model for each backend in 
 
 | Backend name | Executable | Setup |
 | --- | --- | --- |
+| `pi` | `pi` | Install `@earendil-works/pi-coding-agent`, then use `/login` in Pi or configure a provider API key. RPC integration is experimental; authenticated workflows remain unverified. |
 | `codex` | `codex` | Sign in with `codex login`. Pair uses app-server and the existing CLI login. |
 | `antigravity` | `agy` | Install and sign in through Antigravity CLI. |
 | `copilot` | `copilot` | Install `@github/copilot` and sign in through its CLI. BYOK is unverified in Pair. |
@@ -39,6 +40,22 @@ OpenCode's default free model refused ACP requests in testing: some free models 
 Antigravity's picker loads the account's current catalog using `agy models`. Choosing a model restarts the headless process with `--model` and resumes the same saved conversation. You can also configure an initial `models.antigravity` default. The optional older Codex transport, `transport = "exec"`, does not offer the same streaming or verified session restoration as app-server.
 
 Gemini CLI remains maintained for enterprise/Google Cloud and paid API-key access. Its personal free, Pro, and Ultra routes moved to Antigravity; see [Google's transition announcement](https://github.com/google-gemini/gemini-cli/discussions/27274). Pair keeps the experimental Gemini adapter for eligible accounts.
+
+## Pi RPC
+
+```lua
+require("pair").setup({
+  backend = "pi",
+  -- Optional default; :PairModel lists models available through Pi.
+  models = { pi = "anthropic/claude-sonnet-4-20250514" },
+})
+```
+
+Pair starts `pi --mode rpc` and uses Pi's existing provider credentials. Model values use `provider/model-id`; selection happens through RPC without restarting the conversation. Pi sessions are stored beside the Pair record in a private `.pi` directory; the Pair pointer stores the full Pi session path. Restoration passes that path to `--session` and fails rather than silently starting a different conversation if it is missing.
+
+Only Pi's built-in `read`, `grep`, `find`, and `ls` tools are enabled. Extensions (including MCP), skills, prompt templates, context files, and project-local configuration are disabled. Bash and file-write tools are unavailable; `commands.writable_paths` does not apply. Pi file tools read disk; Pair's attached editor snapshot supplies unsaved content.
+
+The client streams text and tool activity, sends `abort` for cancellation, and waits for `agent_settled` rather than treating a successful prompt response or `agent_end` as completion. Use a Pi version with that RPC lifecycle event. Protocol behavior was checked against Pi 1.0.0; mock RPC and editor workflows pass, but authenticated Chat/Ask/Change/Insert and write-denial validation remain unverified.
 
 ## Commands and generated output
 

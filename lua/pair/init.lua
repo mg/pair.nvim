@@ -1,6 +1,7 @@
 local CodexExec = require("pair.codex")
 local CodexAppServer = require("pair.app_server")
 local ACP = require("pair.acp")
+local Pi = require("pair.pi")
 local Antigravity = require("pair.antigravity")
 local DirectAPI = require("pair.direct_api")
 local backends = require("pair.backends")
@@ -51,6 +52,7 @@ local config = vim.deepcopy(defaults)
 local function client_backend(spec)
   if spec.kind == "direct" then return DirectAPI end
   if spec.kind == "acp" then return ACP end
+  if spec.kind == "pi" then return Pi end
   if spec.kind == "antigravity" then return Antigravity end
   return config.transport == "exec" and CodexExec or CodexAppServer
 end
@@ -1150,7 +1152,7 @@ function M.health_info()
   return {
     configured = configured,
     backend = config.backend,
-    transport = config.transport,
+    transport = spec and spec.kind == "pi" and "rpc" or config.transport,
     custom = spec and spec.custom == true or false,
     executable = spec and vim.fn.executable(spec.kind == "direct" and "curl" or spec.command) == 1 or false,
     kind = spec and spec.kind or nil,

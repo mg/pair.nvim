@@ -39,7 +39,11 @@ Optional setup fields include: >lua
     models = {},               -- e.g. { opencode = "provider/model" }
   })
 <
-Presets are `codex`, `claude`, `copilot`, `antigravity`, `gemini`, and `opencode`.
+CLI presets are `codex`, `pi`, `claude`, `copilot`, `antigravity`, `gemini`,
+and `opencode`. `pi` needs an installed, authenticated Pi CLI and uses RPC
+mode. It permits only read/grep/find/ls, disables extensions and project-local
+configuration, and restores saved Pi session paths. Pi model IDs use
+provider/model-id. Its authenticated workflows remain experimental.
 `antigravity` needs an installed, signed-in `agy` CLI. ACP presets need their
 own installed, authenticated CLI or adapter. For a custom ACP agent,
 `agents[name]` needs `kind = "acp"`, a

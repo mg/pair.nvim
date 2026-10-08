@@ -71,6 +71,7 @@ Pair remembers your last backend and selected model for each backend across rest
 | Antigravity CLI | Live workflow passed with a personal Google account |
 | GitHub Copilot CLI | Live workflow passed with an existing Copilot account |
 | OpenCode | Live workflow passed with an OpenRouter key and `openrouter/openai/gpt-4.1-mini` |
+| Pi RPC | Experimental; mock RPC and editor workflows tested |
 | Claude Code ACP | Experimental; mock workflow and adapter startup tested |
 | Legacy Gemini CLI ACP | Experimental; mock workflow tested |
 | OpenAI, Anthropic, Gemini APIs | Experimental; mock and local HTTP workflows tested |
