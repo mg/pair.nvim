@@ -58,11 +58,12 @@ local function snapshot(index)
 end
 
 press("<leader>pp")
-assert(#picked.items == 7 and not picked.items[2].available and not picked.items[3].available,
-  "normal mapping should show all seven actions; scoped actions need a selection")
+assert(#picked.items == 7 and picked.items[2].available and picked.items[3].available,
+  "normal mapping should offer scoped actions using the current line")
 choose("ask")
-assert(table.concat(notices, "\n"):find("select code first", 1, true),
-  "an unavailable action should explain what is needed")
+prompt()
+press("q")
+assert(#notices == 0, "current-line actions should not warn about a missing selection")
 vim.cmd("PairActions")
 choose("chat")
 assert(vim.bo.filetype == "pairinput", "Chat should focus the persistent chat input")

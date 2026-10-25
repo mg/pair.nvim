@@ -642,7 +642,14 @@ function M.actions(visual, supplied_target)
   local is_source = vim.bo[source_buf].buftype == ""
   local target, selection_err = supplied_target
   if not is_source then target = nil end
-  if visual and is_source and not target then target, selection_err = edit.selection() end
+  if is_source and not target then
+    if visual then
+      target, selection_err = edit.selection()
+    else
+      local row = vim.api.nvim_win_get_cursor(0)[1]
+      target, selection_err = edit.line_range(row, row)
+    end
+  end
   local insertion = is_source and edit.insertion() or nil
   local selection_note = not is_source and "open from a source buffer"
     or selection_err or "select code first"

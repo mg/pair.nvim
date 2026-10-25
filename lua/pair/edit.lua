@@ -273,13 +273,14 @@ end
 
 function M.selection()
 	local buf = api.nvim_get_current_buf()
-	if vim.fn.visualmode() == "\22" then
-		return nil, "Blockwise selections are not supported yet"
-	end
 	local start = vim.fn.getpos("'<")
 	local finish = vim.fn.getpos("'>")
 	if start[2] == 0 or finish[2] == 0 then
-		return nil, "Select code first"
+		local row = api.nvim_win_get_cursor(0)[1]
+		return M.line_range(row, row)
+	end
+	if vim.fn.visualmode() == "\22" then
+		return nil, "Blockwise selections are not supported yet"
 	end
 	local start_row, start_col = start[2] - 1, start[3] - 1
 	local end_row, end_col = finish[2] - 1, finish[3] - 1
